@@ -22,39 +22,41 @@ if ($jdkVersion -eq $latestVersion) {
     Write-Host "JDK has been updated to version $latestVersion" -ForegroundColor DarkGreen
 }
 
+# URL of the file to download
+$url = "https://api.papermc.io/v2/projects/paper/versions/1.19.4/builds/466/downloads/paper-1.19.4-466.jar"
+
+# Extract filename from the URL
+$filename = [System.IO.Path]::GetFileName($url)
+$downloadedFileName = $filename 
+
+# Specify the download path
 $folderName = "RequiredItems"
 $currentDir = Get-Location
 $requiredItemsPath = Join-Path $currentDir $folderName
+$downloadPath = Join-Path $requiredItemsPath $filename
 
-if (Test-Path $requiredItemsPath) {
-    Remove-Item -Path $requiredItemsPath -Recurse -Force
-    New-Item -ItemType Directory -Path $requiredItemsPath
-    Write-Host "The '$folderName' folder has been deleted and recreated." -ForegroundColor DarkGreen
-} else {
+# Create the RequiredItems directory if it doesn't exist
+if (-not (Test-Path -Path $requiredItemsPath)) {
     New-Item -ItemType Directory -Path $requiredItemsPath
     Write-Host "The '$folderName' folder has been created." -ForegroundColor Green
 }
 
-# Define PaperMC server version
-$version = ""
+# Create a new WebClient object
+$webClient = New-Object System.Net.WebClient
 
-# Define PaperMC server URL
-$url = "https://api.papermc.io/v2/projects/paper/versions/1.19.4/builds/466/downloads/paper-1.19.4-466.jar"
+# Download the file
+$webClient.DownloadFile($url, $downloadPath)
 
+# Dispose of the WebClient object
+$webClient.Dispose()
 
-# Download PaperMC server file
-#$fileName = "paper-$version.jar"
-$filePath = Join-Path $requiredItemsPath #$fileName
-Invoke-WebRequest -Uri $url -OutFile $filePath
-
-# Display message indicating successful download
-Write-Host "PaperMC $version has been downloaded to the '$folderName' folder." -ForegroundColor Green
-
+# Output the downloaded file's path
+Write-Host "File downloaded and saved as: $downloadPath" -ForegroundColor Cyan
 
 # Define path to StartServer.bat file
 $fileName = "StartServer.bat"
 $currentDir = Get-Location
-$startServerPath = Join-Path $currentDir $fileName
+$startServerPath = Join-Path $requiredItemsPath $fileName
 
 # Prompt user for RAM allocation
 Write-Host "[Remember the server plus the minecraft it will run in background so make sure to allocate ram properly.
@@ -64,8 +66,7 @@ $maxRam = Read-Host "Enter the maximum RAM allocation for the server in GB (e.g.
 $minRam = Read-Host "Enter the minimum RAM allocation for the server in GB (e.g. 1):"
 
 # Create StartServer.bat file with updated RAM allocation
-$batchCommands = "@echo off`n"
-$batchCommands += "java -Xmx${maxRam}G -Xms${minRam}G -jar $serverFileName nogui`n"
+$batchCommands = "java -Xmx${maxRam}G -Xms${minRam}G -jar $downloadedFileName nogui`n"
 $batchCommands += "pause"
 Set-Content -Path $startServerPath -Value $batchCommands
 
@@ -73,7 +74,7 @@ Set-Content -Path $startServerPath -Value $batchCommands
 Write-Host "StartServer.bat has been created with the maximum RAM allocation of ${maxRam} GB and minimum RAM allocation of ${minRam} GB." -ForegroundColor Green
 
 # Define path to RequiredItems folder
-$requiredItemsPath = Join-Path $PSScriptRoot "RequiredItems"
+#$requiredItemsPath = Join-Path $PSScriptRoot "RequiredItems"
 
 # Check if RequiredItems folder exists
 if (Test-Path $requiredItemsPath -PathType Container) {
@@ -88,12 +89,12 @@ if (Test-Path $requiredItemsPath -PathType Container) {
     Write-Host "The RequiredItems folder does not exist in the current directory."
 }
 # Define path to StartServer.bat file
-$startServerPath = Join-Path $PSScriptRoot "StartServer.bat"
+$startServerPath = Join-Path $requiredItemsPath "StartServer.bat"
 
 # Check if StartServer.bat file exists
 if (Test-Path $startServerPath -PathType Leaf) {
     # Execute StartServer.bat file
-    Start-Process $startServerPath
+    Start-Process -FilePath $startServerPath -ArgumentList "" -Verb RunAs
     Write-Host "The StartServer.bat file executed once."
 } else {
     # StartServer.bat file does not exist, display error message

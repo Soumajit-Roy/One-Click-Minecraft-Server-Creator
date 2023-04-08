@@ -1,4 +1,10 @@
-$hd = Invoke-WebRequest -UseBasicParsing -Method Head 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-archive'
+# Set the batch file path
+$batchFilePath = "D:\My Files Sam\Coding\Github\One-Click-Minecraft-Server-Creator\RequiredItems\StartServer.bat"
 
-# Extract the file name from the response.
-$downloadFileName = $hd.BaseResponse.ResponseUri.Segments[-1]
+# Check if the batch file exists
+if (Test-Path $batchFilePath) {
+    # Start the batch file with administrative rights
+    Start-Process -FilePath $batchFilePath -ArgumentList "" -Verb RunAs
+} else {
+    Write-Host "The batch file '$batchFilePath' does not exist." -ForegroundColor Red
+}
