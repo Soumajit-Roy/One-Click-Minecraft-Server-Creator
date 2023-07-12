@@ -67,7 +67,6 @@ $minRam = Read-Host "Enter the minimum RAM allocation for the server in GB (e.g.
 
 # Create StartServer.bat file with updated RAM allocation
 $batchCommands = "java -Xmx${maxRam}G -Xms${minRam}G -jar $downloadedFileName nogui`n"
-$batchCommands += "pause"
 Set-Content -Path $startServerPath -Value $batchCommands
 
 # Display message indicating successful creation of StartServer.bat
